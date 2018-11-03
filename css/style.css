@@ -1,0 +1,10 @@
+#basket {
+    position: fixed;
+    right: 10px;
+    top: 10px;
+    border: 1px solid black;
+}
+
+.table__sum {
+    font-weight: 700;
+}
