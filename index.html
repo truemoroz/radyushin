@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+</head>
+<body>
+
+<div id="app" app-data="true">
+    <v-app id="inspire">
+        <v-data-table
+                :items="authors"
+                :headers="authorsHeader"
+                class="elevation-1 mx-8"
+        >
+            <template v-slot:top>
+                <v-toolbar flat color="white">
+                    <v-toolbar-title>Авторы</v-toolbar-title>
+                    <v-divider
+                            class="mx-4"
+                            inset
+                            vertical
+                    ></v-divider>
+                    <v-spacer></v-spacer>
+                    <v-dialog v-model="dialogAuthor" max-width="500px">
+                        <template v-slot:activator="{ on }">
+                            <v-btn color="primary" dark class="mb-2" v-on="on">Новый автор</v-btn>
+                        </template>
+                        <v-card>
+                            <v-card-title>
+                                <span class="headline">Добавление автора</span>
+                            </v-card-title>
+
+                            <v-card-text>
+                                <v-container>
+                                    <v-row>
+                                        <v-col cols="12" sm="6" md="4">
+                                            <v-text-field v-model="newAuthor.name" label="Фамилия И.О."></v-text-field>
+                                        </v-col>
+                                    </v-row>
+                                </v-container>
+                            </v-card-text>
+
+                            <v-card-actions>
+                                <v-spacer></v-spacer>
+                                <v-btn color="blue darken-1" text @click="close">Отмена</v-btn>
+                                <v-btn color="blue darken-1" text @click="newAuthorSave">Сохранить</v-btn>
+                            </v-card-actions>
+                        </v-card>
+                    </v-dialog>
+                </v-toolbar>
+            </template>
+            <template v-slot:item.name="props">
+                <v-edit-dialog
+                        :return-value.sync="props.item.name"
+                        @save="saveAuthor(props)"
+                > {{ props.item.name }}
+                    <v-icon small>mdi-pencil</v-icon>
+                    <template v-slot:input>
+                        <v-text-field
+                                v-model="props.item.name"
+                                label="Edit"
+                                single-line
+                                counter
+                        ></v-text-field>
+                    </template>
+                </v-edit-dialog>
+            </template>
+            <template v-slot:item.action="{ item }">
+                <v-icon
+                        small
+                        @click="deleteAuthor(item)"
+                >
+                    mdi-delete
+                </v-icon>
+            </template>
+            <template v-slot:item.show-authors="author">
+                <v-dialog
+                        v-model="similarAuthorsDialog"
+                        width="500"
+                >
+                    <template v-slot:activator="{ on }">
+                        <v-btn
+                                color="primary"
+                                dark
+                                v-on="on"
+                                @click.stop="showSimilarAuthor(author)"
+                        >
+                            Показать
+                        </v-btn>
+                    </template>
+                    <v-card>
+                        <v-card-title
+                                class="headline grey lighten-2"
+                                primary-title
+                        >
+                            Похожие авторы по жанрам
+                        </v-card-title>
+
+                        <v-card-text>
+                            <v-data-table
+                                    :headers="similarAuthorsHeaders"
+                                    :items="similarAuthors"
+                                    disable-pagination
+                                    hide-default-footer
+                                    hide-default-header
+                            ></v-data-table>
+                        </v-card-text>
+                    </v-card>
+
+                </v-dialog>
+            </template>
+        </v-data-table>
+
+        <v-data-table
+                :items="genres"
+                :headers="genresHeader"
+                class="elevation-1 mx-8"
+                show-expand
+                :expanded.sync="expanded"
+        >
+            <template v-slot:top>
+                <v-toolbar flat color="white">
+                    <v-toolbar-title>Жанры</v-toolbar-title>
+                    <v-divider
+                            class="mx-4"
+                            inset
+                            vertical
+                    ></v-divider>
+                    <v-spacer></v-spacer>
+                    <v-dialog v-model="dialogGenre" max-width="500px">
+                        <template v-slot:activator="{ on }">
+                            <v-btn color="primary" dark class="mb-2" v-on="on">Новый жанр</v-btn>
+                        </template>
+                        <v-card>
+                            <v-card-title>
+                                <span class="headline">Добавление жанра</span>
+                            </v-card-title>
+
+                            <v-card-text>
+                                <v-container>
+                                    <v-row>
+                                        <v-col cols="12" sm="6" md="6">
+                                            <v-text-field v-model="newGenre.title" label="Название жанра"></v-text-field>
+                                        </v-col>
+                                    </v-row>
+                                </v-container>
+                            </v-card-text>
+
+                            <v-card-actions>
+                                <v-spacer></v-spacer>
+                                <v-btn color="blue darken-1" text @click="close">Отмена</v-btn>
+                                <v-btn color="blue darken-1" text @click="newGenreSave">Сохранить</v-btn>
+                            </v-card-actions>
+                        </v-card>
+                    </v-dialog>
+                </v-toolbar>
+            </template>
+            <template v-slot:item.name="props">
+                <v-edit-dialog
+                        :return-value.sync="props.item.name"
+                        @save="saveGenre(props)"
+                > {{ props.item.name }}
+                    <v-icon small>mdi-pencil</v-icon>
+                    <template v-slot:input>
+                        <v-text-field
+                                v-model="props.item.name"
+                                label="Edit"
+                                single-line
+                                counter
+                        ></v-text-field>
+                    </template>
+                </v-edit-dialog>
+            </template>
+            <template v-slot:item.action="{ item }">
+                <v-icon
+                        small
+                        @click="deleteGenre(item)"
+                >
+                    mdi-delete
+                </v-icon>
+            </template>
+            <template v-slot:item.data-table-expand="{ item, isExpanded, expand }">
+                <v-btn @click="expandGenre(item)">Авторы</v-btn>
+            </template>
+            <template v-slot:expanded-item="{ genresHeader }">
+                <td>
+                    <v-data-table
+                            :items="genreAuthors"
+                            :headers="genreAuthorsHeader"
+                            hide-default-footer
+                            calculate-widths
+                            dark
+                    >
+                    </v-data-table>
+                </td>
+
+            </template>
+        </v-data-table>
+        <v-data-table
+                :items="books"
+                :headers="booksHeader"
+                class="elevation-1 mx-8"
+        >
+            <template v-slot:top>
+                <v-toolbar flat color="white">
+                    <v-toolbar-title>Книги</v-toolbar-title>
+                    <v-divider
+                            class="mx-4"
+                            inset
+                            vertical
+                    ></v-divider>
+                    <v-spacer></v-spacer>
+                    <v-dialog v-model="dialogBook" persistent max-width="500px">
+                        <template v-slot:activator="{ on }">
+                            <v-btn color="primary" dark class="mb-2" v-on="on">Новая книга</v-btn>
+                        </template>
+                        <v-card>
+                            <v-card-title>
+                                <span class="headline">{{ formBookTitle }}</span>
+                            </v-card-title>
+
+                            <v-card-text>
+                                <v-container>
+                                    <v-row>
+                                        <v-col cols="12" sm="6" md="12">
+                                            <v-text-field v-model="editedBook.book_title" label="Название"></v-text-field>
+                                        </v-col>
+                                    </v-row>
+                                    <v-row>
+                                        <v-col cols="12" sm="6" md="6">
+                                            <v-select
+                                                    v-model="editedBook.author_id"
+                                                    :items="authors"
+                                                    item-text="name"
+                                                    item-value="id"
+                                                    label="Автор"
+                                            ></v-select>
+                                        </v-col>
+                                    </v-row>
+                                    <v-row>
+                                        <v-col cols="12" sm="6" md="6">
+                                            <v-select
+                                                    :items="genres"
+                                                    item-text="title"
+                                                    item-value="id"
+                                                    label="Жанр"
+                                                    v-model="editedBook.genre_id"
+                                            ></v-select>
+                                        </v-col>
+                                    </v-row>
+                                    <v-row>
+                                        <v-col cols="12" sm="6" md="6">
+                                            Рейтинг
+                                            <v-rating v-model="editedBook.rating"></v-rating>
+                                        </v-col>
+                                    </v-row>
+                                </v-container>
+                            </v-card-text>
+
+                            <v-card-actions>
+                                <v-spacer></v-spacer>
+                                <v-btn color="blue darken-1" text @click="close">Отмена</v-btn>
+                                <v-btn color="blue darken-1" text @click="newBookSave">Сохранить</v-btn>
+                            </v-card-actions>
+                        </v-card>
+                    </v-dialog>
+                </v-toolbar>
+            </template>
+            <template v-slot:item.action="{ item }">
+                <v-icon
+                        small
+                        class="mr-2"
+                        @click="editBook(item)"
+                >
+                    mdi-pencil
+                </v-icon>
+                <v-icon
+                        small
+                        @click="deleteBook(item)"
+                >
+                    mdi-delete
+                </v-icon>
+            </template>
+        </v-data-table>
+    </v-app>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios@0.19.0/dist/axios.min.js"></script>
+<script type="text/javascript" src="./js/myapp.js"></script>
+</body>
+</html>
+
+
